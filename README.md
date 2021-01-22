@@ -16,7 +16,7 @@ composer install
 php bin/console [command] [options] [arguments] 
 ~~~
 
-##Command
+## Command
 
     - convert:xlsx-to-gift  Convert xlsx file to moodle GiftFormat.
 
