@@ -19,4 +19,5 @@ php bin/console [command] [options] [arguments]
 ## Command
 
 - **convert:xlsx-to-gift**  Convert xlsx file to moodle GiftFormat.
+- **generator:random-tanggal**  Generate Random date in Indonesia format between two date given.
 
