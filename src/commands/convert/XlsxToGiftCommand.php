@@ -19,7 +19,8 @@ class XlsxToGiftCommand extends Command
         $this
             ->setDescription('Convert xlsx file to moodle GiftFormat.')
             ->setHelp('This command allows you to convert a xlsx file to Moodle GiftFormat file.')
-            ->addArgument('src', InputArgument::REQUIRED, 'source path of xlsx file.');
+            ->addArgument('src', InputArgument::REQUIRED, 'source path of xlsx file.')
+            ->addArgument('kode', InputArgument::OPTIONAL, 'question code.');
             // ->addOption(
             //     'src',
             //     null,
@@ -31,6 +32,7 @@ class XlsxToGiftCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $path = realpath($input->getArgument('src'));
+        $kode = $input->getArgument('kode');
 
         if ($path) {
             $spreadsheet = IOFactory::load($path);
@@ -49,11 +51,18 @@ class XlsxToGiftCommand extends Command
                 $cellIterator->setIterateOnlyExistingCells(false); // This loops through all cells,
 
                 $res = "";
+                $cat = false;
                 foreach ($cellIterator as $cell) {
                     $column = $cell->getColumn();
                     switch ($column) {
                         case "A":
-                            $res .= "::" . $cell->getValue() . "::";
+                            if ($cell->getValue() == "CAT") {
+                                $res .= "\n\$CATEGORY: " . $worksheet->getCell("B" . $row->getRowIndex())->getValue();
+                                $cat = true;
+                                break 2;
+                            } else {
+                                $res .= "::" . strtoupper($kode) . str_pad($cell->getValue(), 3, '0', STR_PAD_LEFT) . "::";
+                            }
                             break;
                         case "B":
                             $val = $this->cleanString($cell->getValue());
@@ -62,7 +71,7 @@ class XlsxToGiftCommand extends Command
                             break;
                         default:
                             $bgColor = $cell->getStyle()->getFill()->getStartColor()->getRGB();
-                            if ($bgColor == "00FA00") {
+                            if ($bgColor == "00FF00") {
                                 $res .= "=";
                             } else {
                                 $res .= "~";
@@ -74,13 +83,17 @@ class XlsxToGiftCommand extends Command
                             break;
                     }
                 }
-                $res .= $res ? "}" : "";
+                if ($cat) {
+                    $res .= $res ? "\n" : "";
+                } else {
+                    $res .= $res ? "}\n" : "";
+                }
 
                 $result .= $res . "\n";
             }
 
             $fileInfo = pathinfo($path);
-            $destPath = $fileInfo["dirname"] . "/" . $fileInfo["filename"] . ".gift";
+            $destPath = $fileInfo["dirname"] . "/gift_" . $fileInfo["filename"] . ".txt";
 
             file_put_contents($destPath, $result);
         }
@@ -94,6 +107,11 @@ class XlsxToGiftCommand extends Command
         $str = trim($str);
         $str = str_replace('src="', 'src="@@PLUGINFILE@@/', $str);
         $str = str_replace('=', '\=', $str);
+        $str = str_replace('~', '\~', $str);
+        $str = str_replace('#', '\#', $str);
+        $str = str_replace('{', '\{', $str);
+        $str = str_replace('}', '\}', $str);
+        $str = str_replace(':', '\:', $str);
         $str = nl2br($str);
 
         return $str;

@@ -9,5 +9,6 @@ use Symfony\Component\Console\Application;
 $application = new Application();
 
 $application->add(new app\commands\convert\XlsxToGiftCommand());
+$application->add(new app\commands\generator\RandomTanggalCommand());
 
 $application->run();
